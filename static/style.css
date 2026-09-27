@@ -1,0 +1,245 @@
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #f4f7fb;
+    color: #172033;
+}
+
+.container {
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 36px 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #e9efff;
+    color: #3154c9;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+h1 {
+    font-size: 52px;
+    margin: 14px 0 8px;
+    letter-spacing: -2px;
+}
+
+h1 span { color: #4969e8; }
+
+header p {
+    color: #68738a;
+    font-size: 17px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e2e7f0;
+    border-radius: 18px;
+    padding: 26px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 28px rgba(30, 45, 80, 0.06);
+}
+
+h2 { margin-top: 0; }
+h3 { margin-top: 0; }
+
+.muted { color: #707b91; }
+
+.record-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+}
+
+.primary-btn, .process-btn, .secondary-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 13px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #172033;
+    color: white;
+}
+
+.process-btn {
+    width: 100%;
+    margin-top: 18px;
+    background: #4969e8;
+    color: white;
+}
+
+.process-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: #eef2ff;
+    color: #3154c9;
+}
+
+#timer {
+    font-family: monospace;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+#recordStatus { color: #69748a; }
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: #9aa3b5;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.divider::before, .divider::after {
+    content: "";
+    height: 1px;
+    background: #e1e5ed;
+    flex: 1;
+}
+
+.upload {
+    display: block;
+    border: 2px dashed #cdd5e4;
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    cursor: pointer;
+    color: #3154c9;
+    font-weight: 700;
+}
+
+.upload input { display: none; }
+
+.loading {
+    text-align: center;
+    margin-top: 22px;
+    padding: 20px;
+    background: #f5f7ff;
+    border-radius: 12px;
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    margin: auto;
+    border: 3px solid #dbe1f7;
+    border-top-color: #4969e8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 10px;
+    background: #fff0f0;
+    color: #a12a2a;
+}
+
+.hidden { display: none; }
+
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.result-section {
+    background: #f7f9fc;
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.result-section.full {
+    grid-column: 1 / -1;
+}
+
+.result-section p {
+    line-height: 1.7;
+}
+
+.result-section ul {
+    padding-left: 22px;
+    line-height: 1.7;
+}
+
+.empty { color: #8992a4; }
+
+.transcript {
+    white-space: pre-wrap;
+    line-height: 1.7;
+    max-height: 350px;
+    overflow: auto;
+    background: white;
+    border: 1px solid #e2e7f0;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.steps div {
+    padding: 16px;
+    background: #f7f9fc;
+    border-radius: 12px;
+}
+
+.steps strong {
+    display: block;
+    color: #4969e8;
+    margin-bottom: 8px;
+}
+
+.steps span {
+    color: #5f6a80;
+    font-size: 14px;
+}
+
+footer {
+    text-align: center;
+    color: #8992a4;
+    padding: 12px;
+}
+
+@media (max-width: 750px) {
+    h1 { font-size: 40px; }
+    .result-grid, .steps { grid-template-columns: 1fr; }
+    .result-section.full { grid-column: auto; }
+}

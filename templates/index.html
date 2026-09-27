@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceNote AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="badge">GENERATIVE AI PROJECT</div>
+            <h1>VoiceNote <span>AI</span></h1>
+            <p>Turn lectures, meetings and voice recordings into useful AI-powered notes.</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>1. Add your audio</h2>
+                <p class="muted">Record from your microphone or upload an existing audio file.</p>
+
+                <div class="record-box">
+                    <button id="recordBtn" class="primary-btn">🎙 Start Recording</button>
+                    <span id="timer">00:00</span>
+                    <span id="recordStatus">Ready</span>
+                </div>
+
+                <div class="divider"><span>OR</span></div>
+
+                <label class="upload">
+                    <input id="fileInput" type="file"
+                           accept=".mp3,.mp4,.mpeg,.mpga,.m4a,.ogg,.wav,.webm,.flac">
+                    <span>📁 Choose an audio file</span>
+                </label>
+
+                <p id="selectedFile" class="muted">No file selected.</p>
+
+                <button id="processBtn" class="process-btn" disabled>
+                    ✨ Transcribe & Generate AI Notes
+                </button>
+
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>VoiceNote AI is processing your audio...</p>
+                    <small>Speech → Transcript → AI Summary</small>
+                </div>
+
+                <div id="error" class="error hidden"></div>
+            </section>
+
+            <section id="result" class="card hidden">
+                <div class="result-header">
+                    <div>
+                        <h2>AI Notes</h2>
+                        <p id="resultFile" class="muted"></p>
+                    </div>
+                    <button id="copyBtn" class="secondary-btn">Copy All</button>
+                </div>
+
+                <div class="result-grid">
+                    <div class="result-section full">
+                        <h3>📝 Summary</h3>
+                        <p id="summary"></p>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>💡 Key Highlights</h3>
+                        <ul id="highlights"></ul>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>✅ Action Items</h3>
+                        <ul id="actions"></ul>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>❓ Follow-up Questions</h3>
+                        <ul id="questions"></ul>
+                    </div>
+
+                    <div class="result-section full">
+                        <h3>🎧 Transcript</h3>
+                        <div id="transcript" class="transcript"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>How it works</h2>
+                <div class="steps">
+                    <div><strong>01</strong><span>Upload or record audio</span></div>
+                    <div><strong>02</strong><span>Whisper converts speech to text</span></div>
+                    <div><strong>03</strong><span>GPT-OSS analyzes the transcript</span></div>
+                    <div><strong>04</strong><span>View structured AI notes</span></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            VoiceNote AI • GenAI & Prompt Engineering Project
+        </footer>
+    </div>
+
+<script>
+let mediaRecorder = null;
+let audioChunks = [];
+let recordedBlob = null;
+let timerInterval = null;
+let seconds = 0;
+let currentFile = null;
+
+const recordBtn = document.getElementById("recordBtn");
+const processBtn = document.getElementById("processBtn");
+const fileInput = document.getElementById("fileInput");
+const selectedFile = document.getElementById("selectedFile");
+const recordStatus = document.getElementById("recordStatus");
+const timer = document.getElementById("timer");
+const loading = document.getElementById("loading");
+const errorBox = document.getElementById("error");
+const result = document.getElementById("result");
+
+recordBtn.addEventListener("click", async () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        return;
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: "audio/webm" });
+            recordedBlob = blob;
+            currentFile = new File([blob], "recording.webm", { type: "audio/webm" });
+            selectedFile.textContent = "Recorded audio is ready.";
+            processBtn.disabled = false;
+            recordStatus.textContent = "Recording complete";
+            stream.getTracks().forEach(track => track.stop());
+            clearInterval(timerInterval);
+        };
+
+        mediaRecorder.start();
+        recordBtn.textContent = "⏹ Stop Recording";
+        recordStatus.textContent = "Recording...";
+        seconds = 0;
+        timer.textContent = "00:00";
+        timerInterval = setInterval(() => {
+            seconds++;
+            const min = String(Math.floor(seconds / 60)).padStart(2, "0");
+            const sec = String(seconds % 60).padStart(2, "0");
+            timer.textContent = `${min}:${sec}`;
+        }, 1000);
+    } catch (err) {
+        showError("Microphone access was blocked. Please allow microphone permission or upload an audio file.");
+    }
+});
+
+fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 0) {
+        currentFile = fileInput.files[0];
+        recordedBlob = null;
+        selectedFile.textContent = `${currentFile.name} selected`;
+        processBtn.disabled = false;
+    }
+});
+
+processBtn.addEventListener("click", async () => {
+    if (!currentFile) return;
+
+    hideError();
+    result.classList.add("hidden");
+    loading.classList.remove("hidden");
+    processBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("audio", currentFile);
+
+    try {
+        const response = await fetch("/api/process", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Something went wrong.");
+        }
+
+        renderResult(data);
+    } catch (err) {
+        showError(err.message);
+    } finally {
+        loading.classList.add("hidden");
+        processBtn.disabled = false;
+    }
+});
+
+function renderList(elementId, items) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = "";
+
+    if (!items || items.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "None identified.";
+        li.className = "empty";
+        element.appendChild(li);
+        return;
+    }
+
+    items.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        element.appendChild(li);
+    });
+}
+
+function renderResult(data) {
+    document.getElementById("resultFile").textContent = data.filename;
+    document.getElementById("summary").textContent = data.summary;
+    document.getElementById("transcript").textContent = data.transcript;
+
+    renderList("highlights", data.highlights);
+    renderList("actions", data.action_items);
+    renderList("questions", data.questions);
+
+    result.classList.remove("hidden");
+    result.scrollIntoView({ behavior: "smooth" });
+}
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+    const text = `
+VoiceNote AI - AI Notes
+
+SUMMARY
+${document.getElementById("summary").textContent}
+
+KEY HIGHLIGHTS
+${listToText("highlights")}
+
+ACTION ITEMS
+${listToText("actions")}
+
+FOLLOW-UP QUESTIONS
+${listToText("questions")}
+
+TRANSCRIPT
+${document.getElementById("transcript").textContent}
+`.trim();
+
+    await navigator.clipboard.writeText(text);
+    document.getElementById("copyBtn").textContent = "Copied ✓";
+    setTimeout(() => document.getElementById("copyBtn").textContent = "Copy All", 1500);
+});
+
+function listToText(id) {
+    return [...document.querySelectorAll(`#${id} li`)]
+        .map(li => "- " + li.textContent)
+        .join("\n");
+}
+
+function showError(message) {
+    errorBox.textContent = message;
+    errorBox.classList.remove("hidden");
+}
+
+function hideError() {
+    errorBox.classList.add("hidden");
+    errorBox.textContent = "";
+}
+</script>
+</body>
+</html>
